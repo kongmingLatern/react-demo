@@ -19,7 +19,7 @@ export function performWorkUnit(fiber) {
 		fiber.parent.dom.append(dom)
 
 		// 2. 处理 props
-		initProps(fiber, dom)
+		updateProps(dom, fiber.props)
 	}
 
 	// 3. 转换链表 设置好指针
@@ -62,10 +62,10 @@ function initChildren(fiber: any) {
 	})
 }
 
-function initProps(fiber: any, dom: any) {
-	Object.keys(fiber.props).forEach(key => {
+function updateProps(dom: any, props: any) {
+	Object.keys(props).forEach(key => {
 		if (key !== 'children') {
-			dom[key] = fiber.props[key]
+			dom[key] = props[key]
 		}
 	})
 }
