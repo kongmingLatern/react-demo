@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { React } from '../core/vnode'
+import { React } from '../vnode'
 
 describe('createElement', () => {
 	it('happy path', () => {

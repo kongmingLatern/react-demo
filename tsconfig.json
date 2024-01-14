@@ -20,5 +20,12 @@
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true
 	},
-	"include": ["src"]
+	"include": [
+		"src",
+		"packages/core/index.ts",
+		"packages/core/React.ts",
+		"packages/core/render.ts",
+		"packages/core/vnode.ts",
+		"packages/core/__tests__"
+	]
 }

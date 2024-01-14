@@ -1,5 +1,4 @@
-import { ReactDom } from './core/React'
-import { createElement } from './core/vnode'
+import { ReactDom, createElement } from '../packages/core'
 
 const App = createElement('div', { id: 'root' }, 'app')
 
