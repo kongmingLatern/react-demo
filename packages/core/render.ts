@@ -1,4 +1,5 @@
 let taskId = 1
+let root: any = null
 export let nextWorkOfUnit = {}
 
 export function render(el, container) {
@@ -8,6 +9,8 @@ export function render(el, container) {
 			children: [el],
 		},
 	}
+	// 记录首次的根节点
+	root = nextWorkOfUnit
 }
 
 export function performWorkUnit(fiber) {
@@ -16,7 +19,8 @@ export function performWorkUnit(fiber) {
 		const dom = (fiber.dom = createDom(fiber))
 
 		// 将 dom 添加至父元素中
-		fiber.parent.dom.append(dom)
+		// 这行逻辑问题在于：如果后续没有时间分配给节点的话，浏览器会卡顿（等待其他任务完成之后）再进行渲染
+		// fiber.parent.dom.append(dom)
 
 		// 2. 处理 props
 		updateProps(dom, fiber.props)
@@ -36,6 +40,22 @@ export function performWorkUnit(fiber) {
 	}
 
 	return fiber.parent?.silbing
+}
+
+/**
+ * 从根节点进行渲染
+ * @param root 根节点
+ */
+export function commitRoot(root) {
+	commitWork(root.child)
+	root = null
+}
+
+export function commitWork(fiber) {
+	if (!fiber) return
+	fiber.parent.dom.append(fiber.dom)
+	commitWork(fiber.child)
+	commitWork(fiber.sibling)
 }
 
 function initChildren(fiber: any) {
@@ -85,6 +105,12 @@ export function workLoop(deadline: IdleDeadline) {
 		console.log(`taskId: ${taskId} is running`)
 		shouldYield = deadline.timeRemaining() < 1
 	}
+
+	if (!nextWorkOfUnit) {
+		// 如果没有下一个任务，那么再添加所有dom节点
+		commitRoot(root)
+	}
+
 	requestIdleCallback(workLoop)
 }
 
