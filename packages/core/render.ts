@@ -14,20 +14,30 @@ export function render(el, container) {
 }
 
 export function performWorkUnit(fiber) {
-	// 1. 创建 dom
-	if (!fiber.dom) {
-		const dom = (fiber.dom = createDom(fiber))
+	const isFunctionComponent =
+		typeof fiber.type === 'function'
 
-		// 将 dom 添加至父元素中
-		// 这行逻辑问题在于：如果后续没有时间分配给节点的话，浏览器会卡顿（等待其他任务完成之后）再进行渲染
-		// fiber.parent.dom.append(dom)
+	// 如果不是函数组件
+	if (!isFunctionComponent) {
+		// 1. 创建 dom
+		if (!fiber.dom) {
+			const dom = (fiber.dom = createDom(fiber))
 
-		// 2. 处理 props
-		updateProps(dom, fiber.props)
+			// 将 dom 添加至父元素中
+			// 这行逻辑问题在于：如果后续没有时间分配给节点的话，浏览器会卡顿（等待其他任务完成之后）再进行渲染
+			// fiber.parent.dom.append(dom)
+
+			// 2. 处理 props
+			updateProps(dom, fiber.props)
+		}
 	}
 
+	// 将函数组件和普通标签的数据做格式化处理
+	const children = isFunctionComponent
+		? [fiber.type()]
+		: fiber.props.children
 	// 3. 转换链表 设置好指针
-	initChildren(fiber)
+	initChildren(fiber, children)
 
 	// 4. 返回下一个要执行的任务
 
@@ -53,14 +63,19 @@ export function commitRoot(root) {
 
 export function commitWork(fiber) {
 	if (!fiber) return
-	fiber.parent.dom.append(fiber.dom)
+	let fiberParent = fiber.parent
+	while (!fiberParent.dom) {
+		fiberParent = fiberParent.parent
+	}
+	if (fiber.dom) {
+		fiberParent.dom.append(fiber.dom)
+	}
 	commitWork(fiber.child)
 	commitWork(fiber.sibling)
 }
 
-function initChildren(fiber: any) {
+function initChildren(fiber: any, children) {
 	let prevChild: Record<string, any> = {}
-	const children = fiber.props.children
 	children.forEach((child, index) => {
 		const newChild = {
 			type: child.type,
