@@ -16,31 +16,34 @@ export function render(el, container) {
 	root = nextWorkOfUnit
 }
 
+function updateFunctionComponent(fiber: Fiber) {
+	const children = [fiber.type(fiber.props)]
+	initChildren(fiber, children)
+}
+
+function updateHostComponent(fiber: Fiber) {
+	if (!fiber.dom) {
+		const dom = (fiber.dom = createDom(fiber))
+		// 将 dom 添加至父元素中
+		// NOTE:这行逻辑问题在于：如果后续没有时间分配给节点的话，浏览器会卡顿（等待其他任务完成之后）再进行渲染
+		// fiber.parent.dom.append(dom)
+		// 2. 处理 props
+		updateProps(dom, fiber.props)
+	}
+	const children = fiber.props!.children
+	// 3. 转换链表 设置好指针
+	initChildren(fiber, children)
+}
+
 export function performWorkUnit(fiber: Fiber) {
 	const isFunctionComponent =
 		typeof fiber.type === 'function'
 
-	// 如果不是函数组件
 	if (!isFunctionComponent) {
-		// 1. 创建 dom
-		if (!fiber.dom) {
-			const dom = (fiber.dom = createDom(fiber))
-
-			// 将 dom 添加至父元素中
-			// 这行逻辑问题在于：如果后续没有时间分配给节点的话，浏览器会卡顿（等待其他任务完成之后）再进行渲染
-			// fiber.parent.dom.append(dom)
-
-			// 2. 处理 props
-			updateProps(dom, fiber.props)
-		}
+		updateHostComponent(fiber)
+	} else {
+		updateFunctionComponent(fiber)
 	}
-
-	// 将函数组件和普通标签的数据做格式化处理
-	const children = isFunctionComponent
-		? [fiber.type(fiber.props)]
-		: fiber.props!.children
-	// 3. 转换链表 设置好指针
-	initChildren(fiber, children)
 
 	// 4. 返回下一个要执行的任务
 
