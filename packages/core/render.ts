@@ -1,6 +1,9 @@
+import { Fiber } from './types/fiber'
+import { createFiber } from '.'
 let taskId = 1
-let root: any = null
-export let nextWorkOfUnit = {}
+let root: Fiber | null = null
+
+export let nextWorkOfUnit: Fiber = {} as Fiber
 
 export function render(el, container) {
 	nextWorkOfUnit = {
@@ -13,7 +16,7 @@ export function render(el, container) {
 	root = nextWorkOfUnit
 }
 
-export function performWorkUnit(fiber) {
+export function performWorkUnit(fiber: Fiber) {
 	const isFunctionComponent =
 		typeof fiber.type === 'function'
 
@@ -34,8 +37,8 @@ export function performWorkUnit(fiber) {
 
 	// 将函数组件和普通标签的数据做格式化处理
 	const children = isFunctionComponent
-		? [fiber.type()]
-		: fiber.props.children
+		? [fiber.type(fiber.props)]
+		: fiber.props!.children
 	// 3. 转换链表 设置好指针
 	initChildren(fiber, children)
 
@@ -49,7 +52,11 @@ export function performWorkUnit(fiber) {
 		return fiber.sibling
 	}
 
-	return fiber.parent?.silbing
+	let nextFiber = fiber
+	while (nextFiber) {
+		if (nextFiber.sibling) return nextFiber.sibling
+		nextFiber = nextFiber.parent!
+	}
 }
 
 /**
@@ -75,25 +82,22 @@ export function commitWork(fiber) {
 }
 
 function initChildren(fiber: any, children) {
-	let prevChild: Record<string, any> = {}
+	let prevChild: Fiber = {} as Fiber
 	children.forEach((child, index) => {
-		const newChild = {
-			type: child.type,
-			props: child.props,
-			dom: null,
-			// 孩子节点
-			child: null,
-			// 兄弟节点
-			sibling: null,
-			// 父节点
-			parent: fiber,
-		}
+		const newFiber: Fiber = createFiber(
+			child.type,
+			child.props,
+			null,
+			null,
+			null,
+			fiber
+		)
 		if (index === 0) {
-			fiber.child = newChild
+			fiber.child = newFiber
 		} else {
-			prevChild.sibling = newChild
+			prevChild.sibling = newFiber
 		}
-		prevChild = newChild
+		prevChild = newFiber
 	})
 }
 
@@ -105,7 +109,7 @@ function updateProps(dom: any, props: any) {
 	})
 }
 
-function createDom(fiber: any): any {
+function createDom(fiber: any) {
 	return fiber.type === 'TEXT_ELEMENT'
 		? document.createTextNode(fiber.nodeValue)
 		: document.createElement(fiber.type)
@@ -116,7 +120,7 @@ export function workLoop(deadline: IdleDeadline) {
 
 	while (!shouldYield && nextWorkOfUnit) {
 		// 返回下一个任务
-		nextWorkOfUnit = performWorkUnit(nextWorkOfUnit)
+		nextWorkOfUnit = performWorkUnit(nextWorkOfUnit)!
 		console.log(`taskId: ${taskId} is running`)
 		shouldYield = deadline.timeRemaining() < 1
 	}

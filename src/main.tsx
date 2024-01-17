@@ -3,14 +3,17 @@ import { React, ReactDom } from '../packages/core'
 function App() {
 	return (
 		<div>
-			<A />
+			<A num={1} />
+			<A num={2} />
 			app
 		</div>
 	)
 }
 
-function A() {
-	return <div>aaa</div>
+function A({ num }) {
+	return <div>aaa
+		{num}
+	</div>
 }
 
 
