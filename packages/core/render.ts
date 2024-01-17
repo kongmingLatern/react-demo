@@ -51,10 +51,6 @@ export function performWorkUnit(fiber: Fiber) {
 		return fiber.child
 	}
 
-	if (fiber.sibling) {
-		return fiber.sibling
-	}
-
 	let nextFiber = fiber
 	while (nextFiber) {
 		if (nextFiber.sibling) return nextFiber.sibling
@@ -66,8 +62,8 @@ export function performWorkUnit(fiber: Fiber) {
  * 从根节点进行渲染
  * @param root 根节点
  */
-export function commitRoot(root) {
-	commitWork(root.child)
+export function commitRoot() {
+	commitWork(root!.child)
 	root = null
 }
 
@@ -104,10 +100,16 @@ function initChildren(fiber: any, children) {
 	})
 }
 
-function updateProps(dom: any, props: any) {
+function updateProps(dom: Document, props: any) {
 	Object.keys(props).forEach(key => {
 		if (key !== 'children') {
-			dom[key] = props[key]
+			let eventName
+			if ((eventName = /^on(.*)/g.exec(key))) {
+				eventName = eventName[1].toLocaleLowerCase()
+				dom.addEventListener(eventName, props[key])
+			} else {
+				dom[key] = props[key]
+			}
 		}
 	})
 }
@@ -124,13 +126,13 @@ export function workLoop(deadline: IdleDeadline) {
 	while (!shouldYield && nextWorkOfUnit) {
 		// 返回下一个任务
 		nextWorkOfUnit = performWorkUnit(nextWorkOfUnit)!
-		console.log(`taskId: ${taskId} is running`)
+		// console.log(`taskId: ${taskId} is running`)
 		shouldYield = deadline.timeRemaining() < 1
 	}
 
-	if (!nextWorkOfUnit) {
+	if (!nextWorkOfUnit && root) {
 		// 如果没有下一个任务，那么再添加所有dom节点
-		commitRoot(root)
+		commitRoot()
 	}
 
 	requestIdleCallback(workLoop)

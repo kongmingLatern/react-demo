@@ -3,17 +3,22 @@ import { React, ReactDom } from '../packages/core'
 function App() {
 	return (
 		<div>
-			<A num={1} />
-			<A num={2} />
-			app
+			<A num={10} />
+			<A num={20} />
 		</div>
 	)
 }
 
 function A({ num }) {
-	return <div>aaa
-		{num}
-	</div>
+	function handleClick() {
+		console.log('handleClick');
+	}
+	return (
+		<div>
+			<button onClick={handleClick}>{num}</button>
+			<div>123</div>
+		</div>
+	)
 }
 
 
