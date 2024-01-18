@@ -10,6 +10,11 @@ let showBar = false
 function A() {
 	const foo = <div>foo</div>
 	const bar = <p>bar</p>
+
+	function FunctionComponent() {
+		return <p>123</p>
+	}
+
 	function handleClick() {
 		showBar = !showBar
 		update()
@@ -18,7 +23,7 @@ function A() {
 		<div>
 			<div>
 				{
-					showBar ? bar : foo
+					showBar ? bar : <FunctionComponent />
 				}
 			</div>
 			<button onClick={handleClick}>change</button>

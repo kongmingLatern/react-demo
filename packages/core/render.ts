@@ -74,7 +74,16 @@ export function commitRoot() {
 	deletions = []
 }
 function commitDeletion(fiber: Fiber) {
-	fiber.parent!.dom!.removeChild(fiber.dom!)
+	if (fiber.dom) {
+		// 找父级
+		let fiberParent: Fiber = fiber.parent as Fiber
+		while (!fiberParent.dom) {
+			fiberParent = fiberParent.parent!
+		}
+		fiberParent.dom!.removeChild(fiber.dom!)
+	} else {
+		commitDeletion(fiber.child!)
+	}
 }
 
 export function update() {
