@@ -1,22 +1,22 @@
-import { React, ReactDom } from '../packages/core'
+import { React, ReactDom, update } from '../packages/core'
 
 function App() {
 	return (
-		<div>
-			<A num={10} />
-			<A num={20} />
-		</div>
+		<A num={10} />
 	)
 }
 
-function A({ num }) {
+let count = 0
+function A() {
 	function handleClick() {
-		console.log('handleClick');
+		console.log('handleClick', count);
+		count++
+		update()
 	}
 	return (
 		<div>
-			<button onClick={handleClick}>{num}</button>
-			<div>123</div>
+			<button onClick={handleClick}>click</button>
+			<div>count:{count}</div>
 		</div>
 	)
 }

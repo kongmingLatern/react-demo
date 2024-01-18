@@ -1,7 +1,8 @@
 import { Fiber } from './types/fiber'
 import { createFiber } from '.'
-let taskId = 1
+// let taskId = 1
 let root: Fiber | null = null
+let currentRoot: Fiber | null = null
 
 export let nextWorkOfUnit: Fiber = {} as Fiber
 
@@ -28,7 +29,7 @@ function updateHostComponent(fiber: Fiber) {
 		// NOTE:这行逻辑问题在于：如果后续没有时间分配给节点的话，浏览器会卡顿（等待其他任务完成之后）再进行渲染
 		// fiber.parent.dom.append(dom)
 		// 2. 处理 props
-		updateProps(dom, fiber.props)
+		updateProps(dom, fiber.props, {})
 	}
 	const children = fiber.props!.children
 	// 3. 转换链表 设置好指针
@@ -63,34 +64,84 @@ export function performWorkUnit(fiber: Fiber) {
  * @param root 根节点
  */
 export function commitRoot() {
-	commitWork(root!.child)
+	commitWork(root!.child!)
+	// 重新构造一棵树,用于更新props
+	currentRoot = root
+	console.log('currentRoot', currentRoot)
 	root = null
 }
 
-export function commitWork(fiber) {
-	if (!fiber) return
-	let fiberParent = fiber.parent
-	while (!fiberParent.dom) {
-		fiberParent = fiberParent.parent
+export function update() {
+	// 更新成新的树
+	nextWorkOfUnit = {
+		dom: currentRoot!.dom,
+		props: currentRoot?.props,
+		alternate: currentRoot,
 	}
-	if (fiber.dom) {
-		fiberParent.dom.append(fiber.dom)
-	}
-	commitWork(fiber.child)
-	commitWork(fiber.sibling)
+	root = nextWorkOfUnit
 }
 
-function initChildren(fiber: any, children) {
+export function commitWork(fiber: Fiber) {
+	if (!fiber) return
+	let fiberParent: Fiber = fiber.parent as Fiber
+	while (!fiberParent.dom) {
+		fiberParent = fiberParent.parent!
+	}
+
+	if (fiber.effectTag === 'update') {
+		updateProps(
+			fiber.dom!,
+			fiber.props,
+			fiber.alternate?.props
+		)
+	} else if (fiber.effectTag === 'placement') {
+		if (fiber.dom) {
+			fiberParent.dom.append(fiber.dom)
+		}
+	}
+
+	commitWork(fiber.child!)
+	commitWork(fiber.sibling!)
+}
+
+function initChildren(fiber: Fiber, children) {
+	let oldFiber = fiber.alternate?.child
 	let prevChild: Fiber = {} as Fiber
 	children.forEach((child, index) => {
-		const newFiber: Fiber = createFiber(
-			child.type,
-			child.props,
-			null,
-			null,
-			null,
-			fiber
-		)
+		const isSameType =
+			oldFiber && oldFiber.type === child.type
+		let newFiber: Fiber = {} as Fiber
+		console.log('isSameType', isSameType, oldFiber, child)
+
+		if (isSameType) {
+			// NOTE: update
+			newFiber = createFiber({
+				type: child.type,
+				props: child.props,
+				dom: oldFiber?.dom,
+				child: null,
+				sibling: null,
+				parent: fiber,
+				effectTag: 'update',
+				alternate: oldFiber,
+			}) as Fiber
+		} else {
+			newFiber = createFiber({
+				type: child.type,
+				props: child.props,
+				dom: null,
+				child: null,
+				sibling: null,
+				parent: fiber,
+				effectTag: 'placement',
+			}) as Fiber
+		}
+
+		if (oldFiber) {
+			// 指针指向 兄弟节点
+			oldFiber = oldFiber.sibling
+		}
+
 		if (index === 0) {
 			fiber.child = newFiber
 		} else {
@@ -100,18 +151,48 @@ function initChildren(fiber: any, children) {
 	})
 }
 
-function updateProps(dom: Document, props: any) {
-	Object.keys(props).forEach(key => {
+function updateProps(
+	dom: Element,
+	nextProps: any,
+	prevProps: any
+) {
+	// 1. old have, new haven't  => 删除
+	Object.keys(prevProps).forEach(key => {
 		if (key !== 'children') {
-			let eventName
-			if ((eventName = /^on(.*)/g.exec(key))) {
-				eventName = eventName[1].toLocaleLowerCase()
-				dom.addEventListener(eventName, props[key])
-			} else {
-				dom[key] = props[key]
+			if (!(key in nextProps)) {
+				dom.removeAttribute(key)
 			}
 		}
 	})
+
+	// 2. old haven't, new have  => 添加
+	// 3. old have, new have     => 修改
+
+	Object.keys(nextProps).forEach(key => {
+		if (key !== 'children') {
+			if (nextProps[key] !== prevProps[key]) {
+				let eventName
+				if ((eventName = /^on(.*)/g.exec(key))) {
+					eventName = eventName[1].toLocaleLowerCase()
+					dom.addEventListener(eventName, nextProps[key])
+				} else {
+					dom[key] = nextProps[key]
+				}
+			}
+		}
+	})
+
+	// Object.keys(props).forEach(key => {
+	// 	if (key !== 'children') {
+	// 		let eventName
+	// 		if ((eventName = /^on(.*)/g.exec(key))) {
+	// 			eventName = eventName[1].toLocaleLowerCase()
+	// 			dom.addEventListener(eventName, props[key])
+	// 		} else {
+	// 			dom[key] = props[key]
+	// 		}
+	// 	}
+	// })
 }
 
 function createDom(fiber: any) {

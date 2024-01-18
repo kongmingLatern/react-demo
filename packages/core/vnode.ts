@@ -1,3 +1,5 @@
+import { Fiber } from './types/fiber'
+
 export function createTextNode(text) {
 	return {
 		type: 'TEXT_ELEMENT',
@@ -22,14 +24,16 @@ export function createElement(type, props, ...children) {
 	}
 }
 
-export function createFiber(
+export function createFiber({
 	type,
 	props,
 	dom,
 	child,
 	sibling,
-	fiber
-) {
+	parent,
+	effectTag,
+	alternate,
+}: Partial<Fiber>): Partial<Fiber> {
 	return {
 		type,
 		props,
@@ -39,7 +43,11 @@ export function createFiber(
 		// 兄弟节点
 		sibling,
 		// 父节点
-		parent: fiber,
+		parent,
+		// 标记
+		effectTag,
+		// 指向老节点
+		alternate,
 	}
 }
 

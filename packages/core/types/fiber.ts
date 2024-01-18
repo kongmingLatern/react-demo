@@ -13,8 +13,10 @@ export interface ElementType {
 export interface Fiber {
 	type?: string | any
 	props?: Record<string, any>
-	dom: Document | null
-	child?: Fiber
-	sibling?: Fiber
-	parent?: Fiber
+	dom: Element | null
+	child?: Fiber | null
+	sibling?: Fiber | null
+	parent?: Fiber | null
+	alternate?: Fiber | null
+	effectTag?: string
 }
