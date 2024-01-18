@@ -1,3 +1,5 @@
+import { EFFECTTAG } from '../effectTag'
+
 export interface TextNode {
 	type: 'TEXT_ELEMENT' | string
 	props: {
@@ -18,5 +20,5 @@ export interface Fiber {
 	sibling?: Fiber | null
 	parent?: Fiber | null
 	alternate?: Fiber | null
-	effectTag?: string
+	effectTag?: EFFECTTAG
 }

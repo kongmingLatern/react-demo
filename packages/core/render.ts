@@ -1,8 +1,10 @@
+import { EFFECTTAG } from './effectTag'
 import { Fiber } from './types/fiber'
 import { createFiber } from '.'
 // let taskId = 1
 let wipRoot: Fiber | null = null
 let currentRoot: Fiber | null = null
+let deletions: any[] = []
 
 export let nextWorkOfUnit: Fiber = {} as Fiber
 
@@ -64,11 +66,15 @@ export function performWorkUnit(fiber: Fiber) {
  * @param wipRoot 根节点
  */
 export function commitRoot() {
+	deletions.forEach(commitDeletion)
 	commitWork(wipRoot!.child!)
 	// 重新构造一棵树,用于更新props
 	currentRoot = wipRoot
-	console.log('currentRoot', currentRoot)
 	wipRoot = null
+	deletions = []
+}
+function commitDeletion(fiber: Fiber) {
+	fiber.parent!.dom!.removeChild(fiber.dom!)
 }
 
 export function update() {
@@ -94,7 +100,7 @@ export function commitWork(fiber: Fiber) {
 			fiber.props,
 			fiber.alternate?.props
 		)
-	} else if (fiber.effectTag === 'placement') {
+	} else if (fiber.effectTag === EFFECTTAG.PLACEMENT) {
 		if (fiber.dom) {
 			fiberParent.dom.append(fiber.dom)
 		}
@@ -111,7 +117,6 @@ function reconcileChildren(fiber: Fiber, children) {
 		const isSameType =
 			oldFiber && oldFiber.type === child.type
 		let newFiber: Fiber = {} as Fiber
-		console.log('isSameType', isSameType, oldFiber, child)
 
 		if (isSameType) {
 			// NOTE: update
@@ -122,8 +127,8 @@ function reconcileChildren(fiber: Fiber, children) {
 				child: null,
 				sibling: null,
 				parent: fiber,
-				effectTag: 'update',
 				alternate: oldFiber,
+				effectTag: EFFECTTAG.UPDATE,
 			}) as Fiber
 		} else {
 			newFiber = createFiber({
@@ -133,8 +138,14 @@ function reconcileChildren(fiber: Fiber, children) {
 				child: null,
 				sibling: null,
 				parent: fiber,
-				effectTag: 'placement',
+				effectTag: EFFECTTAG.PLACEMENT,
 			}) as Fiber
+
+			if (oldFiber) {
+				// 删除老节点,创建新节点
+				deletions.push(oldFiber)
+				console.log('should delete', oldFiber)
+			}
 		}
 
 		if (oldFiber) {
