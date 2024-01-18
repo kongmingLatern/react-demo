@@ -1,25 +1,25 @@
 import { Fiber } from './types/fiber'
 import { createFiber } from '.'
 // let taskId = 1
-let root: Fiber | null = null
+let wipRoot: Fiber | null = null
 let currentRoot: Fiber | null = null
 
 export let nextWorkOfUnit: Fiber = {} as Fiber
 
 export function render(el, container) {
-	nextWorkOfUnit = {
+	wipRoot = {
 		dom: container,
 		props: {
 			children: [el],
 		},
 	}
 	// 记录首次的根节点
-	root = nextWorkOfUnit
+	nextWorkOfUnit = wipRoot
 }
 
 function updateFunctionComponent(fiber: Fiber) {
 	const children = [fiber.type(fiber.props)]
-	initChildren(fiber, children)
+	reconcileChildren(fiber, children)
 }
 
 function updateHostComponent(fiber: Fiber) {
@@ -33,7 +33,7 @@ function updateHostComponent(fiber: Fiber) {
 	}
 	const children = fiber.props!.children
 	// 3. 转换链表 设置好指针
-	initChildren(fiber, children)
+	reconcileChildren(fiber, children)
 }
 
 export function performWorkUnit(fiber: Fiber) {
@@ -61,24 +61,24 @@ export function performWorkUnit(fiber: Fiber) {
 
 /**
  * 从根节点进行渲染
- * @param root 根节点
+ * @param wipRoot 根节点
  */
 export function commitRoot() {
-	commitWork(root!.child!)
+	commitWork(wipRoot!.child!)
 	// 重新构造一棵树,用于更新props
-	currentRoot = root
+	currentRoot = wipRoot
 	console.log('currentRoot', currentRoot)
-	root = null
+	wipRoot = null
 }
 
 export function update() {
 	// 更新成新的树
-	nextWorkOfUnit = {
+	wipRoot = {
 		dom: currentRoot!.dom,
 		props: currentRoot?.props,
 		alternate: currentRoot,
 	}
-	root = nextWorkOfUnit
+	nextWorkOfUnit = wipRoot
 }
 
 export function commitWork(fiber: Fiber) {
@@ -104,7 +104,7 @@ export function commitWork(fiber: Fiber) {
 	commitWork(fiber.sibling!)
 }
 
-function initChildren(fiber: Fiber, children) {
+function reconcileChildren(fiber: Fiber, children) {
 	let oldFiber = fiber.alternate?.child
 	let prevChild: Fiber = {} as Fiber
 	children.forEach((child, index) => {
@@ -174,6 +174,7 @@ function updateProps(
 				let eventName
 				if ((eventName = /^on(.*)/g.exec(key))) {
 					eventName = eventName[1].toLocaleLowerCase()
+					dom.removeEventListener(eventName, prevProps[key])
 					dom.addEventListener(eventName, nextProps[key])
 				} else {
 					dom[key] = nextProps[key]
@@ -211,7 +212,7 @@ export function workLoop(deadline: IdleDeadline) {
 		shouldYield = deadline.timeRemaining() < 1
 	}
 
-	if (!nextWorkOfUnit && root) {
+	if (!nextWorkOfUnit && wipRoot) {
 		// 如果没有下一个任务，那么再添加所有dom节点
 		commitRoot()
 	}
