@@ -5,8 +5,9 @@ import { createFiber } from '.'
 let wipRoot: Fiber | null = null
 let currentRoot: Fiber | null = null
 let deletions: any[] = []
+let wipFiber: Fiber | null = null
 
-export let nextWorkOfUnit: Fiber = {} as Fiber
+export let nextWorkOfUnit: Fiber | undefined = {} as Fiber
 
 export function render(el, container) {
 	wipRoot = {
@@ -20,6 +21,7 @@ export function render(el, container) {
 }
 
 function updateFunctionComponent(fiber: Fiber) {
+	wipFiber = fiber
 	const children = [fiber.type(fiber.props)]
 	reconcileChildren(fiber, children)
 }
@@ -88,12 +90,15 @@ function commitDeletion(fiber: Fiber) {
 
 export function update() {
 	// 更新成新的树
-	wipRoot = {
-		dom: currentRoot!.dom,
-		props: currentRoot?.props,
-		alternate: currentRoot,
+	let currentFiber = wipFiber
+	return () => {
+		wipRoot = {
+			...currentFiber,
+			// 记录更新起始点
+			alternate: currentRoot,
+		} as Fiber
+		nextWorkOfUnit = wipRoot
 	}
-	nextWorkOfUnit = wipRoot
 }
 
 export function commitWork(fiber: Fiber) {
@@ -140,15 +145,17 @@ function reconcileChildren(fiber: Fiber, children) {
 				effectTag: EFFECTTAG.UPDATE,
 			}) as Fiber
 		} else {
-			newFiber = createFiber({
-				type: child.type,
-				props: child.props,
-				dom: null,
-				child: null,
-				sibling: null,
-				parent: fiber,
-				effectTag: EFFECTTAG.PLACEMENT,
-			}) as Fiber
+			if (child) {
+				newFiber = createFiber({
+					type: child.type,
+					props: child.props,
+					dom: null,
+					child: null,
+					sibling: null,
+					parent: fiber,
+					effectTag: EFFECTTAG.PLACEMENT,
+				}) as Fiber
+			}
 
 			if (oldFiber) {
 				// 删除老节点,创建新节点
@@ -167,8 +174,16 @@ function reconcileChildren(fiber: Fiber, children) {
 		} else {
 			prevChild.sibling = newFiber
 		}
-		prevChild = newFiber
+		if (newFiber) {
+			prevChild = newFiber
+		}
 	})
+
+	// 在遍历完新节点的时候可能会存在 其他的老节点,那么就需要全部删除
+	while (oldFiber) {
+		deletions.push(oldFiber)
+		oldFiber = oldFiber.sibling
+	}
 }
 
 function updateProps(
@@ -228,6 +243,12 @@ export function workLoop(deadline: IdleDeadline) {
 	while (!shouldYield && nextWorkOfUnit) {
 		// 返回下一个任务
 		nextWorkOfUnit = performWorkUnit(nextWorkOfUnit)!
+
+		if (wipRoot?.sibling?.type === nextWorkOfUnit?.type) {
+			// 记录更新终点
+			nextWorkOfUnit = undefined
+		}
+
 		// console.log(`taskId: ${taskId} is running`)
 		shouldYield = deadline.timeRemaining() < 1
 	}

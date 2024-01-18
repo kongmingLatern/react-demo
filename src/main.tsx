@@ -1,3 +1,5 @@
+import 'uno.css'
+
 import { React, ReactDom, update } from '../packages/core'
 
 function App() {
@@ -6,27 +8,46 @@ function App() {
 	)
 }
 
-let showBar = false
+let showBar = true
 function A() {
 	const foo = <div>foo</div>
 	const bar = <p>bar</p>
+	const updateFn = update()
 
 	function FunctionComponent() {
-		return <p>123</p>
+		return (
+			<div>
+				<h3>FunctionComponent</h3>
+				<p>child1</p>
+				<p>child2</p>
+			</div>
+		)
 	}
 
 	function handleClick() {
 		showBar = !showBar
-		update()
+		updateFn()
 	}
 	return (
 		<div>
-			<div>
+			<div className='bg-blue-500 text-center'>
+				{showBar}
+			</div>
+
+			<div className='bg-red-500 text-center color-white'>
 				{
-					showBar ? bar : <FunctionComponent />
+					showBar && <FunctionComponent />
 				}
 			</div>
-			<button onClick={handleClick}>change</button>
+
+			<button onClick={handleClick}>
+				change
+			</button>
+
+			<div className='bg-green-500 text-center'>
+				<h3>Change Status</h3>
+				{showBar ? foo : bar}
+			</div>
 		</div>
 	)
 }
