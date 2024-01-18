@@ -4,8 +4,53 @@ import { React, ReactDom, update } from '../packages/core'
 
 function App() {
 	return (
-		<A num={10} />
+		<div>
+			{/* <A num={10} /> */}
+			<B />
+			<C />
+			<D />
+
+		</div>
 	)
+}
+
+let bcount = 1
+function B() {
+	console.log('render___B');
+	const updateFn = update()
+	function handleClick() {
+		bcount++
+		updateFn()
+	}
+	return <div><button onClick={handleClick}>click:{bcount}</button></div>
+}
+
+let count = 0
+function C() {
+	console.log('render___C');
+
+	const updateFn = update()
+	function handleClick() {
+		count++
+		updateFn()
+	}
+	return <div>
+		<button onClick={handleClick}>click</button>:{count}
+	</div>
+}
+
+let num = 0
+function D() {
+	const updateFn = update()
+	function handleClick() {
+		count++
+		updateFn()
+	}
+	return <div className='bg-red-300'>
+		<B />
+		<C />
+		<button onClick={handleClick}>Click</button>:{num}
+	</div>
 }
 
 let showBar = true

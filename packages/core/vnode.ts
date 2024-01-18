@@ -16,16 +16,16 @@ export function createElement(type, props, ...children) {
 			...props,
 			children: children
 				.map(child => {
-					if (child) {
-						const isTextNode =
-							typeof child === 'string' ||
-							typeof child === 'number'
-						return isTextNode
-							? createTextNode(child)
-							: child
-					}
+					const isTextNode =
+						typeof child === 'string' ||
+						typeof child === 'number'
+					return isTextNode ? createTextNode(child) : child
 				})
-				.filter(item => typeof item !== 'boolean' && item),
+				.filter(item => {
+					return (
+						typeof item !== 'boolean' && item !== undefined
+					)
+				}),
 		},
 	}
 }

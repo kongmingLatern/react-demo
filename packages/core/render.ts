@@ -79,7 +79,7 @@ function commitDeletion(fiber: Fiber) {
 	if (fiber.dom) {
 		// 找父级
 		let fiberParent: Fiber = fiber.parent as Fiber
-		while (!fiberParent.dom) {
+		while (!fiberParent?.dom) {
 			fiberParent = fiberParent.parent!
 		}
 		fiberParent.dom!.removeChild(fiber.dom!)
@@ -95,7 +95,7 @@ export function update() {
 		wipRoot = {
 			...currentFiber,
 			// 记录更新起始点
-			alternate: currentRoot,
+			alternate: currentFiber,
 		} as Fiber
 		nextWorkOfUnit = wipRoot
 	}
@@ -104,7 +104,7 @@ export function update() {
 export function commitWork(fiber: Fiber) {
 	if (!fiber) return
 	let fiberParent: Fiber = fiber.parent as Fiber
-	while (!fiberParent.dom) {
+	while (!fiberParent?.dom) {
 		fiberParent = fiberParent.parent!
 	}
 
