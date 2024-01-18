@@ -10,7 +10,10 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@unocss/preset-attributify": "^0.58.3",
+    "@unocss/preset-uno": "^0.58.3",
     "typescript": "^5.2.2",
+    "unocss": "^0.58.3",
     "vite": "^5.0.8",
     "vitest": "^1.2.0"
   }
