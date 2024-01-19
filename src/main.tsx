@@ -4,15 +4,24 @@ import { React, ReactDom, update, useState } from '../packages/core'
 
 function App() {
 	const [count, setCount] = useState(10)
+	const [num, setNum] = useState(0)
 
 	function handleClick() {
-		setCount((c) => c + 1)
+		// setCount((c) => c + 1)
+		setCount(count + 1)
+	}
+	function handleSetClick() {
+		// setCount((c) => c + 1)
+		setNum(n => n + 1)
 	}
 
 	return (
 		<div>
 			{count}
 			<button onClick={handleClick}>click</button>
+			<br />
+			{num}
+			<button onClick={handleSetClick}>click</button>
 			{/* <A num={10} /> */}
 			{/* <B />
 			<C />

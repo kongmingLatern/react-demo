@@ -6,6 +6,8 @@ let wipRoot: Fiber | null = null
 let currentRoot: Fiber | null = null
 let deletions: any[] = []
 let wipFiber: Fiber | null = null
+let stateHooks: any[]
+let stateIndex: number
 
 export let nextWorkOfUnit: Fiber | undefined = {} as Fiber
 
@@ -21,6 +23,8 @@ export function render(el, container) {
 }
 
 function updateFunctionComponent(fiber: Fiber) {
+	stateHooks = []
+	stateIndex = 0
 	wipFiber = fiber
 	const children = [fiber.type(fiber.props)]
 	reconcileChildren(fiber, children)
@@ -252,18 +256,25 @@ export function workLoop(deadline: IdleDeadline) {
 export function useState(initialValue) {
 	let currentFiber = wipFiber
 	// 获取之前的值
-	const oldHook = currentFiber?.alternate?.stateHook
+	const oldHook =
+		currentFiber?.alternate?.stateHooks![stateIndex]
 
 	const stateHook = {
 		state: oldHook ? oldHook.state : initialValue,
 	}
+	stateIndex++
+	stateHooks.push(stateHook)
 
-	currentFiber!.stateHook = stateHook
+	currentFiber!.stateHooks = stateHooks
 
 	console.log(stateHook)
 
 	function setState(action) {
-		stateHook.state = action(stateHook.state)
+		if (typeof action === 'function') {
+			stateHook.state = action(stateHook.state)
+		} else {
+			stateHook.state = action
+		}
 
 		wipRoot = {
 			...currentFiber,
