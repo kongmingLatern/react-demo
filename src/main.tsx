@@ -5,6 +5,7 @@ import { React, ReactDom, update, useState } from '../packages/core'
 function App() {
 	const [count, setCount] = useState(10)
 	const [num, setNum] = useState(0)
+	console.log('App Render');
 
 	function handleClick() {
 		// setCount((c) => c + 1)
@@ -12,7 +13,8 @@ function App() {
 	}
 	function handleSetClick() {
 		// setCount((c) => c + 1)
-		setNum(n => n + 1)
+		// setNum(n => n + 1)
+		setNum(() => 0)
 	}
 
 	return (
