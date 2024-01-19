@@ -1,14 +1,22 @@
 import 'uno.css'
 
-import { React, ReactDom, update } from '../packages/core'
+import { React, ReactDom, update, useState } from '../packages/core'
 
 function App() {
+	const [count, setCount] = useState(10)
+
+	function handleClick() {
+		setCount((c) => c + 1)
+	}
+
 	return (
 		<div>
+			{count}
+			<button onClick={handleClick}>click</button>
 			{/* <A num={10} /> */}
-			<B />
+			{/* <B />
 			<C />
-			<D />
+			<D /> */}
 
 		</div>
 	)

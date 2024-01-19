@@ -22,9 +22,7 @@ export function createElement(type, props, ...children) {
 					return isTextNode ? createTextNode(child) : child
 				})
 				.filter(item => {
-					return (
-						typeof item !== 'boolean' && item !== undefined
-					)
+					return typeof item !== 'boolean' && item
 				}),
 		},
 	}

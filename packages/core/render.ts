@@ -217,18 +217,6 @@ function updateProps(
 			}
 		}
 	})
-
-	// Object.keys(props).forEach(key => {
-	// 	if (key !== 'children') {
-	// 		let eventName
-	// 		if ((eventName = /^on(.*)/g.exec(key))) {
-	// 			eventName = eventName[1].toLocaleLowerCase()
-	// 			dom.addEventListener(eventName, props[key])
-	// 		} else {
-	// 			dom[key] = props[key]
-	// 		}
-	// 	}
-	// })
 }
 
 function createDom(fiber: any) {
@@ -259,6 +247,33 @@ export function workLoop(deadline: IdleDeadline) {
 	}
 
 	requestIdleCallback(workLoop)
+}
+
+export function useState(initialValue) {
+	let currentFiber = wipFiber
+	// 获取之前的值
+	const oldHook = currentFiber?.alternate?.stateHook
+
+	const stateHook = {
+		state: oldHook ? oldHook.state : initialValue,
+	}
+
+	currentFiber!.stateHook = stateHook
+
+	console.log(stateHook)
+
+	function setState(action) {
+		stateHook.state = action(stateHook.state)
+
+		wipRoot = {
+			...currentFiber,
+			alternate: currentFiber,
+		} as Fiber
+
+		nextWorkOfUnit = wipRoot
+	}
+
+	return [stateHook.state, setState]
 }
 
 /**

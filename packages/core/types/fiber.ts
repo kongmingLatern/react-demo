@@ -21,4 +21,5 @@ export interface Fiber {
 	parent?: Fiber | null
 	alternate?: Fiber | null
 	effectTag?: EFFECTTAG
+	stateHook?: any
 }
