@@ -11,6 +11,10 @@ function App() {
 
 	useEffect(() => {
 		console.log('init');
+	}, [])
+
+	useEffect(() => {
+		console.log('update', count);
 	}, [count])
 
 

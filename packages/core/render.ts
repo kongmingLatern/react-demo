@@ -8,6 +8,7 @@ let deletions: any[] = []
 let wipFiber: Fiber | null = null
 let stateHooks: any[]
 let stateHookIndex: number
+let effectHooks: any[]
 
 export let nextWorkOfUnit: Fiber | undefined = {} as Fiber
 
@@ -25,6 +26,7 @@ export function render(el, container) {
 function updateFunctionComponent(fiber: Fiber) {
 	stateHooks = []
 	stateHookIndex = 0
+	effectHooks = []
 	wipFiber = fiber
 	const children = [fiber.type(fiber.props)]
 	reconcileChildren(fiber, children)
@@ -310,19 +312,25 @@ function commitEffectHooks() {
 	function run(fiber: Fiber) {
 		if (!fiber) return
 		if (!fiber.alternate) {
-			fiber.effectHook?.callback()
+			fiber.effectHooks?.forEach(hook => {
+				hook.callback()
+			})
 		} else {
 			// update
 			// 检测 deps
-			const oldEffectHook = fiber.alternate.effectHook
 
-			const needUpdate = oldEffectHook?.deps.some(
-				(oldDep, index) => {
-					return oldDep !== fiber?.effectHook.deps[index]
-				}
-			)
+			fiber.effectHooks?.forEach((newHook, index) => {
+				const oldEffectHook =
+					fiber.alternate?.effectHooks[index]
 
-			needUpdate && fiber.effectHook?.callback()
+				const needUpdate = oldEffectHook?.deps.some(
+					(oldDep, i) => {
+						return oldDep !== newHook.deps[i]
+					}
+				)
+
+				needUpdate && newHook?.callback()
+			})
 		}
 		run(fiber.child!)
 		run(fiber.sibling!)
@@ -335,8 +343,9 @@ export function useEffect(callback, deps) {
 		callback,
 		deps,
 	}
+	effectHooks.push(effectHook)
 
-	wipFiber!.effectHook = effectHook
+	wipFiber!.effectHooks = effectHooks
 }
 
 /**
