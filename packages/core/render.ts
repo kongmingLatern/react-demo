@@ -309,7 +309,21 @@ export function useState(initialValue) {
 function commitEffectHooks() {
 	function run(fiber: Fiber) {
 		if (!fiber) return
-		fiber.effectHook?.callback()
+		if (!fiber.alternate) {
+			fiber.effectHook?.callback()
+		} else {
+			// update
+			// 检测 deps
+			const oldEffectHook = fiber.alternate.effectHook
+
+			const needUpdate = oldEffectHook?.deps.some(
+				(oldDep, index) => {
+					return oldDep !== fiber?.effectHook.deps[index]
+				}
+			)
+
+			needUpdate && fiber.effectHook?.callback()
+		}
 		run(fiber.child!)
 		run(fiber.sibling!)
 	}
