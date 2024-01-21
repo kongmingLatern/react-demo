@@ -74,6 +74,7 @@ export function performWorkUnit(fiber: Fiber) {
 export function commitRoot() {
 	deletions.forEach(commitDeletion)
 	commitWork(wipRoot!.child!)
+	commitEffectHooks()
 	// 重新构造一棵树,用于更新props
 	currentRoot = wipRoot
 	wipRoot = null
@@ -303,6 +304,25 @@ export function useState(initialValue) {
 	}
 
 	return [stateHook.state, setState]
+}
+
+function commitEffectHooks() {
+	function run(fiber: Fiber) {
+		if (!fiber) return
+		fiber.effectHook?.callback()
+		run(fiber.child!)
+		run(fiber.sibling!)
+	}
+	run(wipRoot!)
+}
+
+export function useEffect(callback, deps) {
+	const effectHook = {
+		callback,
+		deps,
+	}
+
+	wipFiber!.effectHook = effectHook
 }
 
 /**
